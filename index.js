@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv' 
+dotenv.config()
 import db from './src/models'
 import express from 'express'
 import UserController from './src/controllers/user'
@@ -7,6 +9,10 @@ app.use(express.json())
 
 app.post("/", (req, res) =>{
     return UserController.create(req, res)
+})
+
+app.post("/login", (req, res) =>{
+    return UserController.login(req, res)
 })
 
 app.listen(3333, async () => {
