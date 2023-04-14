@@ -16,13 +16,13 @@ class UserController {
             const user = await User.findOne({ where: { email: req.body.email}})
 
             if(!user){
-                return res.status(401).json({ error: "Usuario ou senha não conferem"})
+                return res.status(401).json({ error: "E-mail ou senha não conferem"})
             }
 
             const checkPassword = await bcrypt.compare(req.body.password, user.password_hash)
 
             if(!checkPassword){
-                return res.status(401).json({ error: "Usuario ou senha não conferem"})
+                return res.status(401).json({ error: "E-mail ou senha não conferem"})
             }
 
             console.log({ hash: process.env.JWT_HASH})
@@ -77,6 +77,24 @@ class UserController {
         console.log({ error })
         return res.status(400).json({ error: error?.message})
        }
+    }
+
+    async get(req, res) {
+        try {
+            if(!req.userId){
+                return res.status(400).json({ error: "Id não fornecido"})
+            }
+    
+            const user = await User.findOne({ where: {id: Number(req.userId)}})
+    
+            if(!user){
+                return res.status(404).json({ error: "Usuario não encontrado"})
+            }
+    
+            return res.json(user)
+        } catch (error) {
+            return res.status(400).json({error: error?.message})
+        }
     }
 }
 
