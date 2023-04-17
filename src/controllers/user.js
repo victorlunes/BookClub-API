@@ -1,7 +1,9 @@
 import {User} from '../models'
+import { differenceInHours } from 'date-fns'
 import * as Yup from 'yup'
 import jwt, { sign } from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import mail from '../libs/mail'
 
 class UserController {
     async login(req, res){
@@ -96,6 +98,91 @@ class UserController {
             return res.status(400).json({error: error?.message})
         }
     }
-}
+
+    async forgotPassword(req, res){
+        try {
+            const schema = Yup.object().shape({
+                email: Yup.string().email("Email invalido").required("Email é obigatório"),
+            })
+
+            await schema.validate(req.body)
+
+            const user = await User.findOne({where: {email: req.body.email} })
+
+            if(!user){
+                return res.status(404).json({ error: "Usuario não existe!"})
+            }
+
+            const reset_password_token_sent_at = new Date()
+            const token = Math.random().toString().slice(2, 8)
+            const reset_password_token = await bcrypt.hash(token, 8)
+
+            await user.update({
+                reset_password_token_sent_at,
+                reset_password_token
+            })
+
+            const { email, name} = user 
+            const mailResult = await mail.sendForgotPasswordMail(email, name, token)
+            
+            if(mailResult?.message){ 
+                return res.status(400).json({ error: "E-mail não enviado"})
+            }
+
+            return res.json({ success: true })
+        } catch (error) {
+            return res.status(400).json({error: error?.message})
+        }
+    }
+
+    async resetPassword(req, res) {
+        try {
+            const schema = Yup.object().shape({
+                email: Yup.string().email("Email invalido").required("Email é obigatório"),
+                token: Yup.string().required("Token é obrigatório"),
+                password: Yup.string().required("Senha é obigatório").min(6, "senha deve conter ao menos 6 caracteres")
+            })
+
+            await schema.validate(req.body)
+
+            const user = await User.findOne({where: {email: req.body.email} })
+
+            if(!user){
+                return res.status(404).json({ error: "Usuario não existe!"})
+            }
+
+            if(!user.reset_password_token && !user.reset_password_token_sent_at){
+                return res.status(404).json({ error: "Alteração de senha não solicitada"})
+            }
+
+            const hoursDifference = differenceInHours(new Date(), user.reset_password_token_sent_at )
+            
+            if(hoursDifference > 1) {
+                return res.status(401).json({ error: "Token expirado"})
+            }
+            
+            const checkToken = await bcrypt.compare(req.body.token, user.reset_password_token)
+
+            if(!checkToken){
+                return res.status(401).json({ error: "Token invalido!"})
+            }
+
+            const password_hash = await bcrypt.hash(req.body.password, 8)
+
+            await user.update({
+                password_hash,
+                reset_password_token: null,
+                reset_password_token_sent_at: null,
+            })
+
+            return res.status(200).json({ success: true })
+
+
+        } catch (error) {
+            return res.status(400).json({error: error?.message})
+        }
+    }
+
+} 
 
 export default new UserController()

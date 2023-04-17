@@ -8,9 +8,16 @@ const routes = new Router()
 routes.post("/user", (req, res) =>{
     return UserController.create(req, res)
 })
-
 routes.post("/login", (req, res) =>{
     return UserController.login(req, res)
+})
+
+routes.post("/forgot-password", (req, res) =>{
+    return UserController.forgotPassword(req, res)
+})
+
+routes.post("/reset-password", (req, res) =>{
+    return UserController.resetPassword(req, res)
 })
 
 // ---------- authenticated ----------
