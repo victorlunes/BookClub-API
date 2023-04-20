@@ -3,6 +3,7 @@ import authMiddleWares from '../middlewares/auth'
 import UserController from '../controllers/user'
 import CategoryController from '../controllers/categories'
 import AuthorController from '../controllers/author'
+import BookController from '../controllers/book'
 
 const routes = new Router()
 
@@ -24,17 +25,11 @@ routes.post("/reset-password", (req, res) =>{
 
 // ---------- authenticated ----------
 routes.use(authMiddleWares)
-routes.get("/user", (req, res) =>{
-    return UserController.get(req, res)
-})
-routes.get("/category", (req, res) =>{
-    return CategoryController.getAll(req, res)
-})
-routes.post("/author", (req, res) => {
-    return AuthorController.create(req, res)
-})
-routes.get("/author", (req, res) => {
-    return AuthorController.getAll(req, res)
-})
+routes.get("/user", UserController.get)
+routes.get("/category", CategoryController.getAll)
+routes.post("/author",AuthorController.create)
+routes.get("/author", AuthorController.getAll)
+routes.post("/book", BookController.create)
+routes.get("/book", BookController.findAll)
 
 export default routes;
