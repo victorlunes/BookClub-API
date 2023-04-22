@@ -19,11 +19,13 @@ class BookController {
             const { category_id, author_id } = req.body
 
             const category = await Category.findByPk(category_id)
+
             if(!category){
                 return res.json(404).json({ error: "Categoria não encontrada"})
             } 
 
             const author = await Author.findByPk(author_id)
+            
             if(!author){
                 return res.status(404).json({ error: "Autor não encontrado"})
             }
@@ -42,20 +44,25 @@ class BookController {
     }
 
     async findAll(req, res){
-        const books = await Book.findAll({
-            include: [
-                {
-                    model: Author,
-                    as: "author"
-                },
-                {
-                    model: Category,
-                    as: "category"
-                }
-            ]
-        })
-
-        return res.json(books)
+        try {
+            const books = await Book.findAll({
+                include: [
+                    {
+                        model: Author,
+                        as: "author"
+                    },
+                    {
+                        model: Category,
+                        as: "category"
+                    }
+                ]
+            })
+    
+            return res.json(books)
+        } catch (error) {
+            console.log({ error })
+            return res.status(400).json({ error: error?.message})
+        }
     }
 }
 
